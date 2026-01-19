@@ -1,6 +1,5 @@
 # 龜三的ERP Demo - Angular 前端
 
-
 ![CI](https://github.com/kamesan634/angular-demo/actions/workflows/ci.yml/badge.svg)
 
 基於 Angular 21 + PrimeNG 21 DEMO用的零售業 ERP 系統前端應用。

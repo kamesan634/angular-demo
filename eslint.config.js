@@ -49,6 +49,8 @@ module.exports = tseslint.config(
       '@angular-eslint/template/elements-content': 'warn',
       '@angular-eslint/template/click-events-have-key-events': 'warn',
       '@angular-eslint/template/interactive-supports-focus': 'warn',
+      // PrimeNG 表單元件不使用標準的 for + id 關聯方式
+      '@angular-eslint/template/label-has-associated-control': 'off',
     },
   },
   {

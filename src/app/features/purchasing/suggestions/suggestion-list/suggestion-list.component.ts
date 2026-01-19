@@ -109,7 +109,7 @@ interface PurchaseSuggestion {
               <p-select [options]="reasonOptions" [(ngModel)]="selectedReason" placeholder="建議原因" [showClear]="true"></p-select>
             </div>
             <div class="header-right">
-              <span class="selected-info" *ngIf="getSelectedCount() > 0">已選 {{ getSelectedCount() }} 項</span>
+              @if (getSelectedCount() > 0) { <span class="selected-info">已選 {{ getSelectedCount() }} 項</span> }
               <button pButton icon="pi pi-check" label="批次核准" class="p-button-success p-button-sm" [disabled]="!hasSelectedItems()" (click)="batchApprove()"></button>
               <button pButton icon="pi pi-times" label="批次忽略" class="p-button-secondary p-button-sm" [disabled]="!hasSelectedItems()" (click)="batchDismiss()"></button>
             </div>

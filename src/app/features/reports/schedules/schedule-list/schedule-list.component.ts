@@ -83,13 +83,15 @@ interface ReportSchedule {
           <div class="stat-label">今日待執行</div>
         </div>
       </div>
-      <div class="stat-card error" *ngIf="stats().errorCount > 0">
-        <div class="stat-icon"><i class="pi pi-exclamation-triangle"></i></div>
-        <div class="stat-content">
-          <div class="stat-value">{{ stats().errorCount }}</div>
-          <div class="stat-label">執行異常</div>
+      @if (stats().errorCount > 0) {
+        <div class="stat-card error">
+          <div class="stat-icon"><i class="pi pi-exclamation-triangle"></i></div>
+          <div class="stat-content">
+            <div class="stat-value">{{ stats().errorCount }}</div>
+            <div class="stat-label">執行異常</div>
+          </div>
         </div>
-      </div>
+      }
     </div>
 
     <div class="card">
