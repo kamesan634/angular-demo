@@ -1,0 +1,217 @@
+/**
+ * 客戶列表頁面元件
+ */
+import { Component, inject, signal, OnInit } from '@angular/core';
+import { CommonModule, CurrencyPipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { TableModule } from 'primeng/table';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { TagModule } from 'primeng/tag';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog';
+import { TooltipModule } from 'primeng/tooltip';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { PageHeaderComponent } from '@shared/components';
+import { Customer } from '@core/models';
+
+@Component({
+  selector: 'app-customer-list',
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    TableModule,
+    ButtonModule,
+    InputTextModule,
+    TagModule,
+    ConfirmDialogModule,
+    DialogModule,
+    TooltipModule,
+    IconFieldModule,
+    InputIconModule,
+    PageHeaderComponent,
+    CurrencyPipe,
+  ],
+  providers: [ConfirmationService],
+  template: `
+    <app-page-header
+      title="客戶管理"
+      subtitle="管理客戶資料與會員資訊"
+      [breadcrumbs]="[{ label: '基礎資料' }, { label: '客戶管理' }]"
+    >
+      <button pButton label="新增客戶" icon="pi pi-plus" (click)="openDialog()"></button>
+    </app-page-header>
+
+    <p-confirmDialog></p-confirmDialog>
+
+    <div class="card">
+      <p-table
+        [value]="customers()"
+        [paginator]="true"
+        [rows]="20"
+        [loading]="loading()"
+        [rowHover]="true"
+        dataKey="id"
+        styleClass="p-datatable-sm"
+      >
+        <ng-template pTemplate="caption">
+          <div class="table-header">
+            <p-iconField iconPosition="left">
+              <p-inputIcon styleClass="pi pi-search"></p-inputIcon>
+              <input pInputText [(ngModel)]="searchValue" placeholder="搜尋客戶..." />
+            </p-iconField>
+          </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="width: 100px">客戶編號</th>
+            <th>客戶名稱</th>
+            <th style="width: 120px">電話</th>
+            <th style="width: 180px">Email</th>
+            <th style="width: 100px; text-align: right">累計消費</th>
+            <th style="width: 80px; text-align: right">點數</th>
+            <th style="width: 80px; text-align: center">狀態</th>
+            <th style="width: 120px; text-align: center">操作</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-customer>
+          <tr>
+            <td>{{ customer.code }}</td>
+            <td>{{ customer.name }}</td>
+            <td>{{ customer.phone || '-' }}</td>
+            <td>{{ customer.email || '-' }}</td>
+            <td class="text-right">{{ customer.total_spent | currency:'TWD':'symbol':'1.0-0' }}</td>
+            <td class="text-right">{{ customer.points }}</td>
+            <td class="text-center">
+              <p-tag
+                [value]="customer.is_active ? '啟用' : '停用'"
+                [severity]="customer.is_active ? 'success' : 'danger'"
+              ></p-tag>
+            </td>
+            <td class="text-center">
+              <button pButton icon="pi pi-pencil" class="p-button-text p-button-sm" (click)="editCustomer(customer)" pTooltip="編輯"></button>
+              <button pButton icon="pi pi-trash" class="p-button-text p-button-danger p-button-sm" (click)="confirmDelete(customer)" pTooltip="刪除"></button>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="8" class="text-center p-4">尚無客戶資料</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+
+    <p-dialog [(visible)]="dialogVisible" [header]="isEdit ? '編輯客戶' : '新增客戶'" [modal]="true" [style]="{ width: '500px' }">
+      <div class="grid">
+        <div class="col-6 form-field">
+          <label>客戶編號</label>
+          <input pInputText [(ngModel)]="form.code" class="w-full" />
+        </div>
+        <div class="col-6 form-field">
+          <label>客戶名稱</label>
+          <input pInputText [(ngModel)]="form.name" class="w-full" />
+        </div>
+        <div class="col-6 form-field">
+          <label>電話</label>
+          <input pInputText [(ngModel)]="form.phone" class="w-full" />
+        </div>
+        <div class="col-6 form-field">
+          <label>Email</label>
+          <input pInputText [(ngModel)]="form.email" class="w-full" />
+        </div>
+        <div class="col-12 form-field">
+          <label>地址</label>
+          <input pInputText [(ngModel)]="form.address" class="w-full" />
+        </div>
+        <div class="col-12 form-field">
+          <label><input type="checkbox" [(ngModel)]="form.is_active" /> 啟用</label>
+        </div>
+      </div>
+      <ng-template pTemplate="footer">
+        <button pButton label="取消" class="p-button-text" (click)="dialogVisible = false"></button>
+        <button pButton label="儲存" (click)="saveCustomer()"></button>
+      </ng-template>
+    </p-dialog>
+  `,
+  styles: [`
+    .card { background: var(--surface-card); border-radius: 8px; padding: 1.5rem; }
+    .table-header { display: flex; gap: 1rem; margin-bottom: 1rem; }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .form-field { margin-bottom: 1rem; }
+    .form-field label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+    .w-full { width: 100%; }
+    .grid { display: flex; flex-wrap: wrap; margin: -0.5rem; }
+    .col-6 { width: 50%; padding: 0.5rem; box-sizing: border-box; }
+    .col-12 { width: 100%; padding: 0.5rem; box-sizing: border-box; }
+  `],
+})
+export class CustomerListComponent implements OnInit {
+  private readonly confirmationService = inject(ConfirmationService);
+  private readonly messageService = inject(MessageService);
+
+  customers = signal<Customer[]>([]);
+  loading = signal(false);
+  searchValue = '';
+  dialogVisible = false;
+  isEdit = false;
+  form: Partial<Customer> = {};
+
+  ngOnInit(): void {
+    this.loadCustomers();
+  }
+
+  loadCustomers(): void {
+    this.loading.set(true);
+    setTimeout(() => {
+      this.customers.set([
+        { id: 1, code: 'CU001', name: '王小明', phone: '0912345678', email: 'wang@example.com', points: 1500, total_spent: 25000, is_active: true, created_at: '', updated_at: '' },
+        { id: 2, code: 'CU002', name: '李小華', phone: '0923456789', email: 'lee@example.com', points: 3200, total_spent: 58000, is_active: true, created_at: '', updated_at: '' },
+        { id: 3, code: 'CU003', name: '張大同', phone: '0934567890', email: 'chang@example.com', points: 800, total_spent: 12000, is_active: true, created_at: '', updated_at: '' },
+        { id: 4, code: 'CU004', name: '陳美玲', phone: '0945678901', email: 'chen@example.com', points: 5600, total_spent: 98000, is_active: true, created_at: '', updated_at: '' },
+        { id: 5, code: 'CU005', name: '林志偉', phone: '0956789012', points: 200, total_spent: 3500, is_active: false, created_at: '', updated_at: '' },
+      ]);
+      this.loading.set(false);
+    }, 500);
+  }
+
+  openDialog(): void {
+    this.isEdit = false;
+    this.form = { is_active: true };
+    this.dialogVisible = true;
+  }
+
+  editCustomer(customer: Customer): void {
+    this.isEdit = true;
+    this.form = { ...customer };
+    this.dialogVisible = true;
+  }
+
+  saveCustomer(): void {
+    this.messageService.add({ severity: 'success', summary: '成功', detail: this.isEdit ? '客戶已更新' : '客戶已新增' });
+    this.dialogVisible = false;
+    this.loadCustomers();
+  }
+
+  confirmDelete(customer: Customer): void {
+    this.confirmationService.confirm({
+      message: `確定要刪除客戶「${customer.name}」嗎？`,
+      header: '確認刪除',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: '刪除',
+      rejectLabel: '取消',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.messageService.add({ severity: 'success', summary: '成功', detail: `客戶「${customer.name}」已刪除` });
+        this.loadCustomers();
+      },
+    });
+  }
+}
